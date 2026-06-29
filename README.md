@@ -15,7 +15,6 @@ This project focuses on the **cloud, networking, and infrastructure side** of th
 **Frontend:** Vite, React, TailwindCSS, TanStack Router
 **Infrastructure:** Google Cloud VM (Debian), UFW firewall, Docker, PostgreSQL installed directly on the VM
 
----
 
 ## Architecture Overview
 
@@ -39,8 +38,6 @@ This project focuses on the **cloud, networking, and infrastructure side** of th
 ```
 
 The VM exposes a handful of ports to the outside world, each one opened deliberately rather than left wide open, more on that below.
-
----
 
 ## 1. Creating the Cloud VM
 
@@ -81,7 +78,6 @@ PermitRootLogin no
 
 After editing this file, the SSH service has to be restarted for the change to take effect, and critically the **firewall** has to allow the new port, or you'll lock yourself out.
 
----
 
 ## 3. Firewall Configuration
 
@@ -132,11 +128,8 @@ sudo ufw status
 | 443 | HTTPS |
 | 3000 | NestJS REST API |
 | 5173 | Vite frontend dev server |
-| 5432 | PostgreSQL |
 
-Opening **5432 to the world** is the one I'd flag as fine for a learning project, not fine for production but i just wanted to guarantee that the project worked for now. The safer pattern is to keep the database reachable only from `localhost` or from specific internal IPs, and never expose it directly.
 
----
 
 ## 4. Installing the Runtime: Node.js and Docker
 
@@ -166,8 +159,6 @@ sudo systemctl status docker
 ![Docker service active and running](img/docker_running.png)
 
 `active (running)` confirms the Docker daemon is up and listening for commands this has to be true before any `docker build` or `docker run` will work.
-
----
 
 ## 5. PostgreSQL Setup
 
@@ -209,7 +200,6 @@ That `172.19.0.0/16` range is Docker's internal bridge network, the private IP r
 
 The other piece, on the Docker side, was adding `host.docker.internal` as a route, so the container has a *name* it can use to reach the host machine's network interface since `localhost` from inside the container won't work, but `host.docker.internal` resolves to the host machine specifically.
 
----
 
 ## 6. Running the Backend (Docker Compose)
 
@@ -240,11 +230,15 @@ Vite's dev server prints out every address it's reachable on:
 
 By default, Vite's dev server only binds to `localhost`, refusing connections from any other address running it with `--host 0.0.0.0` (or letting it bind to all interfaces) is what makes those `Network` URLs work at all. Binding to `0.0.0.0` means "listen on every network interface this machine has," as opposed to just the loopback interface.
 
----
+## 8. Nginx
+
+After all was running ok, i decided to install nginx to improve the incoming trafic to our server, so far i just implement a redirect/port forwarding in the machine, the incoming trafic to the server gets served the frontend of the website without having to select the port, so accessing the website feels natural
+
+![nginx](img/nginx.png)
 
 ## Result
 
-With the firewall, SSH, Postgres, Docker, and both dev servers all correctly wired together, the actual application becomes reachable from a browser on any machine not just the VM itself:
+With the firewall, SSH, Postgres, Docker, nginx and both dev servers all correctly wired together, the actual application becomes reachable from a browser on any machine not just the VM itself:
 
 ### Dashboard
 ![Dashboard](img/dashboard.png)
