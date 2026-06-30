@@ -16,6 +16,16 @@ This project focuses on the **cloud, networking, and infrastructure side** of th
 **Infrastructure:** Google Cloud VM (Debian), UFW firewall, Docker, PostgreSQL installed directly on the VM
 
 
+# Phases of my project
+
+
+| Version | Addings |
+|------|---------|
+| 1.0 | First commit, creating README showing SSH, UFW, Network configuration |
+| 1.1 | Installation of Git, Postgresql, Docker and get the web app running (both React frontend and Nest JS API running in the container) |
+| 1.2 | Basic configuration of nginx, redirecting all incomming HTTP trafic to the React frontend app |
+
+
 ## Architecture Overview
 
 ```
