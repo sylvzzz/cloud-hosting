@@ -24,7 +24,7 @@ This project focuses on the **cloud, networking, and infrastructure side** of th
 | 1.0 | First commit, creating README showing SSH, UFW, Network configuration |
 | 1.1 | Installation of Git, Postgresql, Docker and get the web app running (both React frontend and Nest JS API running in the container) |
 | 1.2 | Basic configuration of nginx, redirecting all incomming HTTP trafic to the React frontend app |
-
+| 1.3 | Adding api to nginx for clean flow between client and server, adding a machine script that runs every 10 minutes with crontab |
 
 ## Architecture Overview
 
