@@ -25,26 +25,32 @@ This project focuses on the **cloud, networking, and infrastructure side** of th
 | 1.1 | Installation of Git, Postgresql, Docker and get the web app running (both React frontend and Nest JS API running in the container) |
 | 1.2 | Basic configuration of nginx, redirecting all incomming HTTP trafic to the React frontend app |
 | 1.3 | Adding api to nginx for clean flow between client and server, adding a machine script that runs every 10 minutes with crontab |
+| 1.4 | Creating my own VPC and configuring its subnets and firewall policies and assigning the main VPS to the network |
 
 ## Architecture Overview
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                Google Cloud VM (Debian)                  │
-│                                                          │
-│   ┌──────────────┐        ┌──────────────┐               │
-│   │   Frontend   │  HTTP  │   Backend    │   localhost   └────────────┐
-│   │  Vite + React│ ─────► │   NestJS     │ ────────────►   PostgreSQL │
-│   │  :5173       │        │   :3000      │                 :5432      │
-│   └──────────────┘        └──────────────┘                            │
-│                                  ▲                                    │
-│                          (Docker container)                           │
-│                                                                       │
-└───────────────────────────────────────────────────────────────────────
-        ▲                         ▲
-        │ SSH :2006               │ HTTP/HTTPS :80/:443
-        │                         │
-   My machine                 End users
+┌────────────────────────────────────────────────────────────────────────────┐
+│               Google Cloud VPC (custom /24 subnet)                         │
+│                                                                            │
+│  ┌────────────────────────────────────────────────────────┐                │
+│  │                Google Cloud VM (Debian)                │                │
+│  │                                                        │                │
+│  │   ┌──────────────┐        ┌──────────────┐             │                │
+│  │   │   Frontend   │        │   Backend    │             └──────────┐     │
+│  │   │     React    │ ─────► │   NestJS     │ ─────────►  PostgreSQL │     │
+│  │   │  :5173       │        │   :3000      │               :5432    │     │
+│  │   └──────────────┘        └──────────────┘                        │     │
+│  │                                  ▲                                │     │
+│  │                          (Docker container)                       │     │
+│  │                                                                   │     │
+│  └───────────────────────────────────────────────────────────────────┘     │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+         ▲                         ▲
+         │ SSH :22                 │ HTTP/HTTPS :80/:443
+         │                         │
+    My machine                 End users
 ```
 
 The VM exposes a handful of ports to the outside world, each one opened deliberately rather than left wide open, more on that below.
@@ -70,24 +76,6 @@ The first connection from my machine looked like this:
 
 ![First SSH connection](img/first_ssh_connect.jpg)
 
-### Hardening SSH
-
-By default, SSH listens on port 22, and `root` login is often allowed, both of which make a server vulnerable to attacks, so i changed those defaults in my server. I changed both:
-
-![Editing sshd_config](img/configuring_ssh.png)
-
-Key changes in `/etc/ssh/sshd_config`:
-
-```
-Port 2006
-PermitRootLogin no
-```
-
-- **Changing the port** doesn't make SSH more *cryptographically* secure, but it does drastically cut down on noise from generic bots that only ever try port 22.
-- **Disabling root login** means even if someone did guess credentials, they'd land on a low-privilege user account rather than getting full system control immediately, they'd still need to escalate privileges from there.
-
-After editing this file, the SSH service has to be restarted for the change to take effect, and critically the **firewall** has to allow the new port, or you'll lock yourself out.
-
 
 ## 3. Firewall Configuration
 
@@ -111,7 +99,7 @@ Each rule here corresponds to one allowed port:
 - `default-allow-http` / `default-allow-https` → ports 80/443, standard web traffic
 - `rest-api` → port 3000, the NestJS backend
 - `allow-vite-5173` → port 5173, the Vite dev server
-- `default-allow-ssh` → port 2006 (renamed from the default 22, matching the `sshd_config` change above)
+- `default-allow-ssh` → port 22
 - `default-allow-icmp` → allows ping
 - `default-allow-internal` → allows all traffic *between* VMs inside the same private network this doesn't expose anything to the public internet, it's purely for internal communication between machines in the same project
 
@@ -133,7 +121,7 @@ sudo ufw status
 
 | Port | Purpose |
 |------|---------|
-| 2006 | SSH (moved off the default 22) |
+| 22 | SSH |
 | 80 | HTTP |
 | 443 | HTTPS |
 | 3000 | NestJS REST API |
@@ -246,6 +234,20 @@ After all was running ok, i decided to install nginx to improve the incoming tra
 
 ![nginx](img/nginx.png)
 
+## 9. Building a Network (VPC)
+
+After completing the 42 common core project <a href ="https://github.com/sylvzzz/netpractice">netpractice</a> i got even more intersted into networks and cloud, i found a good way to test my knowledge about the concepts i learned in netpractice was to build a VPC, this way if we need scaling or more machines/services on our platform its easier to scale.
+
+### Creating the VPC
+![Created](img/created_vpc.png)
+
+Here i created the network in the region closest to me with the mask /24 that is more than enough to scale, /24 wasnt needed but when scaling that could be helpful.
+
+### Putting the VM in the Network
+![Assigned](img/assign_new_vpc.png)
+
+After creating a new instance i already put my VM inside my network.
+
 ## Result
 
 With the firewall, SSH, Postgres, Docker, nginx and both dev servers all correctly wired together, the actual application becomes reachable from a browser on any machine not just the VM itself:
@@ -263,11 +265,13 @@ With the firewall, SSH, Postgres, Docker, nginx and both dev servers all correct
 
 This project touched a lot of concepts that are easy to read about but only really click once something breaks and you have to figure out why:
 
+- **How cloud infrastructure and networks**, work besidees connecting an api to a database.
 - **The difference between a network-level firewall and an OS-level firewall**, and why both have to independently agree before a port is genuinely open.
 - **Why containers are usefull + why they can't see "localhost" the way you'd expect** and that this single fact is the root cause of a surprising number of "it works on my machine but not in Docker" problems.
 - **SSH's trust model** host key fingerprints, and why changing the default port meaningfully cuts down on automated attack noise even though it's not a substitute for real authentication security.
 - **How `real infrastructures` seem to work**, its more than just npm run start and bun run dev, theres a whole process behind it
 - **How a dev server's bind address (`localhost` vs `0.0.0.0`) determines who can reach it**, independent of whether the firewall allows the port.
+
 
 ## Status
 
@@ -275,6 +279,6 @@ This project touched a lot of concepts that are easy to read about but only real
 - **Frontend** working, built with Vite + React
 - **Database** operational, running directly on the VM
 - **Networking** firewall (cloud + UFW) and SSH access fully configured
-- **Deployment** running live on a Google Cloud VM
+- **Deployment** running live on a Google Cloud VM inside a secure VPC
 
 ## Made by sylvzzz
