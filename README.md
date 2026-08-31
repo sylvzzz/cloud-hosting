@@ -1,7 +1,7 @@
 
 # Cloud Hosting - Learning Cloud
 
-The goal of this project is to host a infrastructure for a full-stack e-commerce project (NestJS + React + PostgreSQL) that I built mainly as an excuse to learn how real infrastructure and hosting work. Creating a cloud server, implementing services from previous experiences with VM´s and the 42 Lisboa project **born2beroot** locking it down with a **firewall**, running **Postgres** and **Docker** on it, and getting a frontend and backend to actually talk to each other across a network.
+The goal of this project is to host a infrastructure for a <a href="https://github.com/sylvzzz/oximur">full-stack e-commerce platform</a> (NestJS + React + PostgreSQL) that I built mainly as an excuse to learn how real infrastructure and hosting work. Creating a cloud server, implementing services from previous experiences with VM´s and the 42 Lisboa project **born2beroot** locking it down with a **firewall**, running **Postgres** and **Docker** on it, and getting a frontend and backend to actually talk to each other across a network.
 
 ***Disclaimer**: i wanted to do in a AWS EC2 instance since its the biggets cloud provider and the most used but i was having problems with my card so had to do with Google Cloud instead XD
 
