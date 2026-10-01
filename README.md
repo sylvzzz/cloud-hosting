@@ -26,6 +26,7 @@ This project focuses on the **cloud, networking, and infrastructure side** of th
 | 1.2 | Basic configuration of nginx, redirecting all incomming HTTP trafic to the React frontend app |
 | 1.3 | Adding api to nginx for clean flow between client and server, adding a machine script that runs every 10 minutes with crontab |
 | 1.4 | Creating my own VPC and configuring its subnets and firewall policies and assigning the main VPS to the network |
+| 1.5 | Creating an <a href="https://github.com/sylvzzz/ai-pipeline">CICD pipeline</a> that gives an AI code review on Pull Requests |
 
 ## Architecture Overview
 
